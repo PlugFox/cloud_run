@@ -54,7 +54,7 @@ void runServer({
 
         {
           Future<void> signalHandler(io.ProcessSignal signal) async {
-            log('Received signal $signal - closing');
+            log('* | LOG | Received signal [$signal] - closing');
 
             final subCopy = sigIntSub;
             if (subCopy != null) {
@@ -89,8 +89,10 @@ void runServer({
 
         final serverTable =
             <io.HttpServer, StreamSubscription<io.HttpRequest>>{};
-        final numberOfInstance = concurrency.clamp(1, 12);
+        final numberOfInstance = concurrency.clamp(1, 36);
         for (var i = 0; i < numberOfInstance; i++) {
+          final serverName = i.toRadixString(36);
+
           /// Start server
           final server = await io.HttpServer.bind(
             address ?? io.InternetAddress.anyIPv6,
@@ -101,39 +103,43 @@ void runServer({
           final startTime = stopwatch.elapsedMilliseconds;
 
           /// Start handler
-          final serverSubscription = server.listen(_requestHandler);
+          final serverSubscription =
+              server.listen((request) => _requestHandler(serverName, request));
 
           serverTable[server] = serverSubscription;
-          log('Listening server on [${server.address.host}]:${server.port} in $startTime ms');
+          log('* | LOG | Listening server #$serverName on '
+              '[${server.address.host}]:${server.port} '
+              'in $startTime ms');
         }
         stopwatch.stop();
 
         /// Shutdown all servers
+        final force = await shutdownSignal;
         for (final entry in serverTable.entries) {
-          final force = await shutdownSignal;
           await entry.key
               .close(force: force)
               .timeout(const Duration(seconds: 25));
           await entry.value.cancel().timeout(const Duration(seconds: 25));
-          io.exit(0);
         }
+        log('* | LOG | Shutdown');
+        Timer(const Duration(seconds: 1), () => io.exit(0));
       },
       (error, stackTrace) async {
-        err('[ERR] ${error.toString()}');
+        err('! | ERR | ${error.toString()}');
         io.exit(2);
       },
     );
 
-Future<void> _requestHandler(io.HttpRequest request) async {
+Future<void> _requestHandler(String serverName, io.HttpRequest request) async {
   final method = request.method.toUpperCase();
   final path = request.uri.path.toLowerCase();
   final routeString = '[$method] $path';
-  log('[REQ] $routeString');
+  log('$serverName | REQ | $routeString');
   final route = _innerRouter[routeString.hashCode];
   if (route is! Route) {
     request.response.statusCode = io.HttpStatus.notFound;
     await request.response.close().timeout(const Duration(seconds: 15));
-    log('[RSP] $routeString -> ${io.HttpStatus.notFound}');
+    log('$serverName | RSP | $routeString -> ${io.HttpStatus.notFound}');
     return;
   }
   try {
@@ -148,12 +154,12 @@ Future<void> _requestHandler(io.HttpRequest request) async {
         .addStream(response.data)
         .timeout(const Duration(seconds: 25));
     await request.response.close().timeout(const Duration(seconds: 5));
-    log('[RSP] $routeString -> ${response.statusCode}');
+    log('$serverName | RSP | $routeString -> ${response.statusCode}');
     return;
   } on Object {
     request.response.statusCode = io.HttpStatus.internalServerError;
     await request.response.close().timeout(const Duration(seconds: 5));
-    err('[RSP] $routeString -> ${io.HttpStatus.internalServerError}');
+    err('$serverName | RSP | $routeString -> ${io.HttpStatus.internalServerError}');
     rethrow;
   }
 }

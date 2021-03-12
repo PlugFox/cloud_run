@@ -9,7 +9,8 @@ final router = {
   Route(
       method: 'GET',
       path: '/',
-      handler: (_, __) => ServerResponse.text('Hello world')),
+      handler: (_, __) => Future<void>.delayed(const Duration(seconds: 5))
+          .then<ServerResponse>((_) => ServerResponse.text('Hello world'))),
   Route(
       method: 'GET',
       path: '/json',
