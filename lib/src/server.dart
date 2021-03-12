@@ -69,6 +69,7 @@ void runServer({
             }
           }
 
+          /// TODO: также по возможности слушать нажатие на клавишу [Q]
           sigIntSub = io.ProcessSignal.sigint.watch().listen(signalHandler);
           // SIGTERM is not supported on Windows. Attempting to register a SIGTERM
           // handler raises an exception.
