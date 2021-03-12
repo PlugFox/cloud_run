@@ -39,11 +39,12 @@ void runServer({
   required Set<Route> router,
   io.InternetAddress? address,
   int port = 8080,
+  int concurrency = 1,
   List<String> args = const [],
 }) =>
     runZonedGuarded(
       () async {
-        final stopwatch = Stopwatch();
+        final stopwatch = Stopwatch()..start();
 
         /// Приготовимся к завершению приложения
         // ignore: cancel_subscriptions
@@ -86,23 +87,32 @@ void runServer({
           }
         }
 
-        /// Start server
-        final server = await io.HttpServer.bind(
-          address ?? io.InternetAddress.anyIPv6,
-          port,
-        );
+        final serverTable =
+            <io.HttpServer, StreamSubscription<io.HttpRequest>>{};
+        for (var i = 0; i < concurrency; i++) {
+          /// Start server
+          final server = await io.HttpServer.bind(
+            address ?? io.InternetAddress.anyIPv6,
+            port,
+          );
 
-        /// Start handler
-        final serverSubscription = server.listen(_requestHandler);
-        log('Listening server on [${server.address.host}]:${server.port}');
+          final startTime = stopwatch.elapsedMilliseconds;
 
-        /// Shutdown
-        {
+          /// Start handler
+          final serverSubscription = server.listen(_requestHandler);
+
+          serverTable[server] = serverSubscription;
+          log('Listening server on [${server.address.host}]:${server.port} in $startTime ms');
+        }
+        stopwatch.stop();
+
+        /// Shutdown all servers
+        for (final entry in serverTable.entries) {
           final force = await shutdownSignal;
-          await server.close(force: force).timeout(const Duration(seconds: 25));
-          await serverSubscription
-              .cancel()
+          await entry.key
+              .close(force: force)
               .timeout(const Duration(seconds: 25));
+          await entry.value.cancel().timeout(const Duration(seconds: 25));
           io.exit(0);
         }
       },
