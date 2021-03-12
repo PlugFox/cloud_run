@@ -89,11 +89,13 @@ void runServer({
 
         final serverTable =
             <io.HttpServer, StreamSubscription<io.HttpRequest>>{};
-        for (var i = 0; i < concurrency; i++) {
+        final numberOfInstance = concurrency.clamp(1, 12);
+        for (var i = 0; i < numberOfInstance; i++) {
           /// Start server
           final server = await io.HttpServer.bind(
             address ?? io.InternetAddress.anyIPv6,
             port,
+            shared: numberOfInstance > 1,
           );
 
           final startTime = stopwatch.elapsedMilliseconds;

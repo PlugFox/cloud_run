@@ -1,6 +1,9 @@
 import 'package:cloud_run/cloud_run.dart';
 
-void main() => runServer(router: router);
+void main() => runServer(
+      router: router,
+      concurrency: 3,
+    );
 
 final router = {
   Route(
