@@ -1,23 +1,20 @@
 import 'package:cloud_run/cloud_run.dart';
 
-void main() => runServer(
-      router: router,
-      port: 8080,
-    );
+void main() => runServer(router: router);
 
 final router = {
   Route(
-      method: 'get', path: '/', handler: (_, __) => ServerResponse.json(null)),
-  Route(
-    method: 'get',
-    path: '/json',
-    handler: (_, __) => ServerResponse.json(
-      {'key': 'value'},
-      headers: <String, String>{'A': 'B'},
-    ),
+    method: 'GET',
+    path: '/',
+    handler: (_, __) => ServerResponse.text('Hello world'),
   ),
   Route(
-      method: 'get',
+    method: 'GET',
+    path: '/json',
+    handler: (_, __) => ServerResponse.json({'key': 'value'}),
+  ),
+  Route(
+      method: 'POST',
       path: '/text',
       handler: (_, __) => ServerResponse.text('Some text')),
 };
