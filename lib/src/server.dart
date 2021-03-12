@@ -91,6 +91,7 @@ void runServer({
             <io.HttpServer, StreamSubscription<io.HttpRequest>>{};
         final numberOfInstance = concurrency.clamp(1, 36);
         for (var i = 0; i < numberOfInstance; i++) {
+          /// TODO: если numberOfInstance > 1 - все инстансы спавним в изолятах
           final serverName = i.toRadixString(36);
 
           /// Start server
