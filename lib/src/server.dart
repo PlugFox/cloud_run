@@ -43,6 +43,8 @@ void runServer({
 }) =>
     runZonedGuarded(
       () async {
+        final stopwatch = Stopwatch();
+
         /// Приготовимся к завершению приложения
         // ignore: cancel_subscriptions
         StreamSubscription? sigIntSub, sigTermSub;
