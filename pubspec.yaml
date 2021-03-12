@@ -1,0 +1,14 @@
+name: cloud_run
+description: A starting point for Dart libraries or applications.
+version: 0.0.1-dev
+homepage: 'https://github.com/PlugFox/cloud_run'
+publish_to: 'none'
+
+environment:
+  sdk: '>=2.12.0 <3.0.0'
+
+#dependencies:
+#  path: ^1.7.0
+
+dev_dependencies:
+  pedantic: '>=1.11.0 <2.0.0'
